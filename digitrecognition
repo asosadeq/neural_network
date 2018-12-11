@@ -1,0 +1,267 @@
+
+
+//package digitrecognition;
+
+public class digitrecognition
+{
+
+    public static int NO_OF_INPUTS = 20;
+    public static  int NO_OF_HIDDEN = 60;
+    public static int NO_OF_OUTPUTS = 9;
+    public static double  learning_rate = 0.6;
+    public static double hweights[][] =new double [NO_OF_HIDDEN][ NO_OF_INPUTS];
+    public static double hidden []=  new double [NO_OF_HIDDEN];
+    public static double vhidden[] = new double [NO_OF_HIDDEN];
+    public static double err_hidden[] = new double [NO_OF_HIDDEN];
+    public static double oweights[][] = new double [NO_OF_OUTPUTS][NO_OF_HIDDEN];
+    public static double outputs[] = new double [NO_OF_OUTPUTS];
+    public static double voutputs[] = new double [NO_OF_OUTPUTS];
+    public static double err_out[] = new double[NO_OF_OUTPUTS];
+    public static int actual;   /* Actual digit - tells us the output */
+    public static int NumOfPatternsTrain=10;
+    public static int NumOfPatternsTest=10;
+    public static int  NumPat=0;
+    public static int f=0;
+
+
+    public static double trainInputs[][]=
+
+            {
+                    {0,1,1,0,1,0,0,1,1,0,0,1,1,0,0,1,0,1,1,0}, //0
+                    {0,1,1,0,0,1,1,0,0,0,1,0,0,0,1,0,0,1,1,1}, //1
+                    {0,1,1,1,1,0,0,1,0,0,1,0,0,1,0,0,1,1,1,1}, //2
+                    {1,1,1,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0}, //3
+                    {1,0,1,0,1,0,1,0,1,1,1,1,0,0,1,0,0,0,1,0}, //4
+                    {1,1,1,1,1,0,0,0,1,1,1,0,0,0,0,1,1,1,1,0},  //5
+                    {0,1,1,1,1,0,0,0,1,1,1,1,1,0,0,1,0,1,1,0},  //6
+                    {1,1,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,1,0,0}, //7
+                    {1,1,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,1,0,1}, //8
+                    {1,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1}, //9
+
+            };
+
+    public static double testInputs[][]=
+
+            {
+                    {0,1,1,0,1,0,0,1,1,0,0,1,1,0,0,1,0,1,1,0}, //0
+                    {0,1,1,0,0,1,1,0,0,0,1,0,0,0,1,0,0,1,1,1}, //1
+                    {0,1,1,1,1,0,0,1,0,0,1,0,0,1,0,0,1,1,1,1},   //2
+                    {1,1,1,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0},  //3
+                    {1,0,1,0,1,0,1,0,1,1,1,1,0,0,1,0,0,0,1,0}, //4
+                    {1,1,1,1,1,0,0,0,1,1,1,0,0,0,0,1,1,1,1,0},  //5
+                    {0,1,1,1,1,0,0,0,1,1,1,1,1,0,0,1,0,1,1,0},  //6
+                    {1,1,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,1,0,0}, //7
+                    {1,1,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,1,0,1}, //8
+                    {1,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1}, //9
+
+            };
+
+
+    public static double trainOutput[][]=
+
+            {
+                    {0,0,0,0,0,0,0,0,0}, //0
+                    {0,0,0,0,0,0,0,0,1}, //1
+                    {0,0,0,0,0,0,0,1,0}, //2
+                    {0,0,0,0,0,0,1,0,0}, //3
+                    {0,0,0,0,0,1,0,0,0}, //4
+                    {0,0,0,0,1,0,0,0,0}, //5
+                    {0,0,0,1,0,0,0,0,0}, //6
+                    {0,0,1,0,0,0,0,0,0}, //7
+                    {0,1,0,0,0,0,0,0,0},//8
+                    {1,0,0,0,0,0,0,0,0},//9
+
+            };
+
+    public static void main(String[] args)
+    {
+
+        int k = 0;
+        double  x = 0.0;
+        /* Initialize */
+//setup ();
+        weight_init();
+        /* Train */
+        for(int j=0;j<200;j++)
+        {
+            for(int i=0;i<NumOfPatternsTrain;i++)
+            {
+                NumPat=(int)((Math.random()*NumOfPatternsTrain)-0.001);;
+                compute_all_hidden();   //ok
+                compute_all_outputs();  //ok
+                /* Weight errors propagate backwards */
+                compute_output_error();
+                compute_hidden_error();
+                update_output();
+                update_hidden();
+                x = compute_error_term();
+                // System.out.println(" Cycle No="+ j + " The error = "+x);
+            }
+
+        }
+        System.out.println(" testing");
+        /* Now apply the NN to the remaining inputs */
+
+        trainInputs=testInputs;
+        f=1;
+
+        for(int i=0;i<NumOfPatternsTrain;i++)
+
+        {
+            NumPat=i;
+
+
+            compute_all_hidden();
+            compute_all_outputs();
+            System.out.println( " "  );
+
+        }
+    }
+
+
+    // initilise the weights//
+    public static void  weight_init ()
+    {
+        int i , j;
+        for (i=0; i<NO_OF_INPUTS; i++)
+            for (j=0; j<NO_OF_HIDDEN; j++)
+            {
+                hweights[j][i]=(Math.random()*2-1);
+            }
+        for (i=0; i<NO_OF_HIDDEN; i++)
+            for (j=0; j<NO_OF_OUTPUTS; j++)
+            {
+                //oweights[j][i]=(Math.random() - 0.5)/5;
+                oweights[j][i]=(Math.random()*2-1);
+                // System.out.println(" oweights " +oweights[j][i]);
+            }
+    }
+    /* Compute all hidden nodes*/
+    public static void compute_hidden (int node)
+    {
+        int i ;
+        double  x = 0;
+        for (i=0; i<NO_OF_INPUTS; i++)
+            x += trainInputs[NumPat][i]*hweights[node][i];
+        hidden[node] = output_function (x);
+
+        vhidden[node] = x;
+    }
+
+    /* Compute the output from output node NODE*/
+    public static void compute_output (int node)
+    {
+        int i = 0;
+        double  x = 0;
+        for (i=0; i<NO_OF_HIDDEN; i++)
+            x += hidden[i]*oweights[node][i];
+        outputs[node] = output_function (x);
+        voutputs[node] = x;
+        if(f==1)
+            System.out.println("outputs["+node+"]  "+outputs[node]);
+
+    }
+    /* Output function for hidden node - linear or sigmoid*/
+    public static double  output_function (double  x)
+    {
+        return  (1/(1+Math.exp(-x)));
+    }
+
+    public static double   output_function_tanh (double  x)
+    {
+        return  (2/(1+Math.exp(-(2)*x)));
+    }
+
+
+    public static double   output_function_relu (double  x)
+    {
+        return  (Math.max(x,0));
+    }
+
+    /* Derivative of the output function*/
+    public static double   of_derivative (double  x)
+    {
+        double  a = 0.0;
+        a = output_function(x);
+        return a*(1.0-a);
+    }
+    /* Compute all hidden nodes*/
+    public static void compute_all_hidden ()
+    {
+        int i = 0;
+        for (i=0; i<NO_OF_HIDDEN; i++)
+            compute_hidden (i);
+    }
+
+    public static void compute_all_outputs ()
+    {
+        int i = 0;
+        for (i=0; i<NO_OF_OUTPUTS; i++)
+            compute_output (i);
+    }
+
+
+
+    /* Calculate the error in the output nodes*/
+    public static  double  compute_output_error ()
+    {
+        // System.out.println("NumPat  " +NumPat);
+        int i = 0;
+        int x = 0;
+        for (i=0; i<NO_OF_OUTPUTS; i++)
+        {
+            err_out[i] = (trainOutput[NumPat][i]-outputs[i]) * of_derivative(voutputs[i]);
+
+            x += err_out[i];
+        }
+        return x;
+    }
+
+    /* What SHOULD the output vector be?*/
+
+
+    /* Compute the error term for the given hidden node*/
+    public static double   compute_hidden_node_error (int node)
+    {
+        int i = 0;
+        double  x = 0.0;
+        for (i=0; i<NO_OF_OUTPUTS; i++)
+            x += err_out[i]*oweights[i][node];
+        return of_derivative(vhidden[node]) * x;
+    }
+    /* Compute all hidden node error terms*/
+    public static  void compute_hidden_error ()
+    {
+        int i = 0;
+        for (i=0; i<NO_OF_HIDDEN; i++)
+            err_hidden[i] = compute_hidden_node_error(i);
+    }
+    /* Update the output layer weights*/
+    public static void update_output ()
+    {
+        int i=0, j=0;
+        for (i=0; i<NO_OF_OUTPUTS; i++)
+            for (j=0; j<NO_OF_HIDDEN; j++)
+                oweights[i][j] += learning_rate*err_out[i]*hidden[j];
+    }
+    /* Update the hidden layer weights*/
+    public static void update_hidden ()
+    {
+        int i=0, j=0;
+        for (i=0; i<NO_OF_HIDDEN; i++)
+            for (j=0; j<NO_OF_INPUTS; j++)
+                hweights[i][j] += learning_rate*err_hidden[i]*trainInputs[NumPat][j];
+    }
+
+
+    public static double  compute_error_term ()
+    {
+        int i = 0;
+        double  x = 0.0;
+        for (i=0; i<NO_OF_OUTPUTS; i++)
+            x += (err_out[i]*err_out[i]);
+        return x/2.0;
+    }
+
+
+}
